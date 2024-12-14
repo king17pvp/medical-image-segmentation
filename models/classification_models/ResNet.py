@@ -6,8 +6,6 @@ import torchvision.models.resnet
 # Resnet50 use bottleneck block as basicblock
 # Resnet 18 layer
 
-
-    
 class BasicBlock(nn.Module):
     
     """

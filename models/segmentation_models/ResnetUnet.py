@@ -81,5 +81,3 @@ class ResNetUnet(nn.Module):
         out = self.out(d1)
         
         return out
-    
-ResNetUnetmodel_50 = ResNetUnet(n_classes=1, freeze=True)

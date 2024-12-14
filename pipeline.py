@@ -4,41 +4,71 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
 import numpy as np
-
+import matplotlib.pyplot as plt
 from models.classification_models.ResNet import *
 from models.segmentation_models.ResnetUnet import *
+from models.segmentation_models.AttentionUNet import *
+from models.segmentation_models.R2U_Net import *
+from models.segmentation_models.R2AttU_Net import *
 
 class Pipeline:
     def __init__(self, img_size=256):
         self.transform = self._get_transforms(img_size)
-        self.classification_model, self.segmentation_model, self.lungs_model = self._load_models()
         self.class_names = ['COVID', 'Non-COVID', 'Healthy']
         
+        self.classification_model = None
+        self.segmentation_model = None
+        self.lungs_model = None
+
     def _get_transforms(self, img_size):
         return A.Compose([
             A.LongestMaxSize(max_size=img_size),
             A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ToTensorV2(),
+            ToTensorV2()
         ])
     
-    def _load_models(self):
-        classification_model = resnet_model
-        classification_model.load_state_dict(torch.load('weights/classification_models/resnet50.pt', map_location=torch.device('cpu')))
-        classification_model.eval()
-
-        segmentation_model = ResNetUnet()
-        checkpoint = torch.load('weights/segmentation_models/ResNetUnet_best.pt', map_location=torch.device('cpu'))
-        segmentation_model.load_state_dict(checkpoint['model_state_dict'])
-        segmentation_model.eval()
-
-        lungs_model = ResNetUnet()
-        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt')
-        lungs_model.load_state_dict(checkpoint['model_state_dict'])
-        lungs_model.eval()
-
-        return classification_model, segmentation_model, lungs_model
     
-    def process_image(self, image, overlay_opacity=0.5):
+    def _load_models(self, classification_model_name, segmentation_model_name):
+        if classification_model_name == 'ResNet50':
+            # self.classification_model = ResNet50()
+            self.classification_model = models.resnet50()
+            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet50.pt', map_location = torch.device('cpu')), strict= False)
+        elif classification_model_name == 'ResNet18':
+            # self.classification_model = ResNet18()
+            self.classification_model = models.resnet18()
+            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet18.pt', map_location = torch.device('cpu')), strict= False)
+        elif classification_model_name == 'VGG16':
+            pass
+        elif classification_model_name == 'VGG19':
+            pass
+        self.classification_model.eval()
+
+        if segmentation_model_name == 'ResNetUnet':
+            self.segmentation_model = ResNetUnet()
+            self.segmentation_model.load_state_dict(torch.load('weights/segmentation_models/ResNetUNet.pt', map_location=torch.device('cpu')))
+
+        elif segmentation_model_name == 'AttentionUnet':
+            self.segmentation_model = AttentionUNet()
+            self.segmentation_model.load_state_dict(torch.load('weights/segmentation_models/AttUNet.pt', map_location=torch.device('cpu')))
+
+        elif segmentation_model_name == 'R2Unet':
+            self.segmentation_model = R2U_Net()
+            self.segmentation_model.load_state_dict(torch.load('weights/segmentation_models/R2UNet.pt', map_location=torch.device('cpu')))
+
+        elif segmentation_model_name == 'R2AttentionUnet':
+            self.segmentation_model = R2AttU_Net()
+            self.segmentation_model.load_state_dict(torch.load('weights/segmentation_models/R2AttUNet.pt', map_location=torch.device('cpu')))
+
+        self.segmentation_model.eval()
+
+        self.lungs_model = ResNetUnet()
+        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt')
+        self.lungs_model.load_state_dict(checkpoint['model_state_dict'])
+        self.lungs_model.eval()
+    
+    def process_image(self, image, segmentation_model_name, overlay_opacity=0.5):
         if image is None:
             return None, None, None, None
    
@@ -49,6 +79,7 @@ class Pipeline:
         with torch.inference_mode():
             outputs = self.classification_model(input_tensor)
             probs = F.softmax(outputs, dim=1)
+            print(probs)
             pred_class = torch.argmax(probs, dim=1).item()
             confidence = probs[0][pred_class].item() * 100
 
@@ -56,10 +87,19 @@ class Pipeline:
         
         if prediction == 'COVID':
             with torch.inference_mode():
+                denorm_input_tensor = input_tensor.clone().detach()
+                if segmentation_model_name != 'ResNetUnet':
+                    mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+                    std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+                    denorm_input_tensor = denorm_input_tensor * std + mean
                 # [COVID MASK]
-                covid_output = self.segmentation_model(input_tensor)
+                covid_output = self.segmentation_model(denorm_input_tensor)
                 covid_output = torch.sigmoid(covid_output)
                 covid_output = covid_output.squeeze().cpu().numpy()
+
+                plt.imsave("covid_segmentation_output.png", covid_output, cmap='viridis')
+                print(covid_output.max(), covid_output.min())
+                
                 covid_binary_mask = (covid_output > 0.5).astype(np.uint8) * 255
                 covid_mask_resized = cv2.resize(covid_binary_mask, (image.shape[1], image.shape[0]))
                 

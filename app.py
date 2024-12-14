@@ -19,14 +19,21 @@ def create_interface():
             gr.Markdown("""
                 Upload/ Drop a chest X-ray image for COVID-19 diagnosis and analysis. 
             """)
+        
         with gr.Row(equal_height=True):
             # [MODEL SELECTION]
-            with gr.Column(scale=0.05):
-                model_dropdown = gr.Dropdown(
-                    choices=['ResNet UNet', 'Attention UNet'],
-                    value='ResNet UNet',
-                    label='Model Selection',
+            with gr.Column(scale=0.2):
+                classification_dropdown = gr.Dropdown(
+                    choices=['ResNet50', 'ResNet18', 'VGG16', 'VGG19'],
+                    value='ResNet50',
+                    label='Classification Model',
                 )
+                segmentation_dropdown = gr.Dropdown(
+                    choices=['ResNetUnet', 'AttentionUnet', 'R2Unet', 'R2AttentionUnet'],
+                    value='ResNetUnet',
+                    label='Segmentation Model'
+                )
+
             # [UPLOAD IMAGE SECTION]
             with gr.Column():
                 input_image = gr.Image(
@@ -79,9 +86,10 @@ def create_interface():
                 confidence_label: None
             }
         
-        def handle_prediction(image, opacity=0.5):            
+        def handle_prediction(image, classification_model, segmentation_model, opacity=0.5):
+            processor._load_models(classification_model, segmentation_model)            
             prediction, confidence, output_img, analysis_text = processor.process_image(
-                image, overlay_opacity=opacity
+                image, segmentation_model, overlay_opacity=opacity
             )
             
             confidence_class = (
@@ -89,7 +97,6 @@ def create_interface():
                 else "confidence-medium" if confidence > 70
                 else "confidence-low"
             )
-            print(confidence_class)
             
             is_covid = output_img is not None
             
@@ -105,7 +112,7 @@ def create_interface():
 
         submit_btn.click(
             fn=handle_prediction,
-            inputs=[input_image],
+            inputs=[input_image, classification_dropdown, segmentation_dropdown],
             outputs=[
                 diagnosis_label,
                 confidence_label,
