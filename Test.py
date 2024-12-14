@@ -23,12 +23,10 @@ model3 = ResNetUnet()
 model3.load_state_dict(torch.load('weights/ResNetUNet.pt', map_location=torch.device('cpu')))
 
 model4 = ResNet18()
-model4.fc = nn.Linear(model4.fc.in_features, 3)
 model4.load_state_dict(torch.load('weights/ResNet18.pt', map_location = torch.device('cpu')), strict= False)
 print(model4)
 
 model5 = ResNet50()
-model5.fc = nn.Linear(model5.fc.in_features, 3)
 model5.load_state_dict(torch.load('weights/ResNet50.pt', map_location = torch.device('cpu')), strict= False)
 dummy = torch.randn((1, 3, 256, 256))
 print(model5(dummy))
