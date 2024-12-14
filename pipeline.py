@@ -64,7 +64,7 @@ class Pipeline:
         self.segmentation_model.eval()
 
         self.lungs_model = ResNetUnet()
-        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt')
+        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt', map_location=torch.device('cpu'))
         self.lungs_model.load_state_dict(checkpoint['model_state_dict'])
         self.lungs_model.eval()
     
@@ -91,7 +91,7 @@ class Pipeline:
                 if segmentation_model_name != 'ResNetUnet':
                     mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
                     std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
-                    denorm_input_tensor = denorm_input_tensor * std + mean
+                    denorm_input_tensor = (denorm_input_tensor * std + mean) * 255
                 # [COVID MASK]
                 covid_output = self.segmentation_model(denorm_input_tensor)
                 covid_output = torch.sigmoid(covid_output)
