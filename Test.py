@@ -6,14 +6,15 @@ from models.segmentation_models.R2U_Net import *
 from models.segmentation_models.R2AttU_Net import *
 
 model0 = AttentionUNet()
-ckpt = torch.load('weights/AttentionUNetWeight.pt', map_location=torch.device('cpu'))
-model0.load_state_dict(torch.load('weights/AttentionUNetWeight.pt', map_location=torch.device('cpu'))['model_state_dict'])
+
+model0.load_state_dict(torch.load('weights/AttUNet.pt', map_location=torch.device('cpu')))
+torch.save(model0.state_dict(), 'weights/AttUNet.pt')
 print(model0)
 
 model1 = R2U_Net()
-model1.load_state_dict(torch.load('weights/R2UNetWeight.pt', map_location=torch.device('cpu'))['model_state_dict'])
+model1.load_state_dict(torch.load('weights/R2UNet.pt', map_location=torch.device('cpu')))
 print(model1)
 
 model2 = R2AttU_Net()
-model2.load_state_dict(torch.load('weights/AttentionR2UNetWeight.pt', map_location=torch.device('cpu'))['model_state_dict'])
+model2.load_state_dict(torch.load('weights/R2AttUNet.pt', map_location=torch.device('cpu')))
 print(model2)
