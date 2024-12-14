@@ -20,3 +20,14 @@ print(model2)
 
 model3 = ResNetUnet()
 model3.load_state_dict(torch.load('weights/ResNetUNet.pt', map_location=torch.device('cpu')))
+
+model4 = models.resnet18()
+model4.fc = nn.Linear(model4.fc.in_features, 3)
+model4.load_state_dict(torch.load('weights/ResNet18.pt', map_location = torch.device('cpu')), strict= False)
+
+print(model4)
+
+model5 = models.resnet50()
+model5.fc = nn.Linear(model5.fc.in_features, 3)
+model5.load_state_dict(torch.load('weights/ResNet50.pt', map_location = torch.device('cpu')), strict= False)
+print(model5)
