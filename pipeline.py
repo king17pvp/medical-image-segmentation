@@ -10,7 +10,7 @@ from models.segmentation_models.ResnetUnet import *
 from models.segmentation_models.AttentionUNet import *
 from models.segmentation_models.R2U_Net import *
 from models.segmentation_models.R2AttU_Net import *
-
+from torchvision.transforms.functional import to_pil_image
 class Pipeline:
     def __init__(self, img_size=256):
         self.transform = self._get_transforms(img_size)
@@ -64,7 +64,7 @@ class Pipeline:
         self.segmentation_model.eval()
 
         self.lungs_model = ResNetUnet()
-        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt')
+        checkpoint = torch.load('weights/segmentation_models/full_lungs_resnet.pt', map_location=torch.device('cpu'))
         self.lungs_model.load_state_dict(checkpoint['model_state_dict'])
         self.lungs_model.eval()
     
@@ -91,14 +91,17 @@ class Pipeline:
                 if segmentation_model_name != 'ResNetUnet':
                     mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
                     std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
-                    denorm_input_tensor = denorm_input_tensor * std + mean
+                    denorm_input_tensor = (denorm_input_tensor * std + mean) * 255
+                    # print(denorm_input_tensor.min(), denorm_input_tensor.max(), image.min(), image.max())
                 # [COVID MASK]
+                # denorm_input_tensor_tmp = denorm_input_tensor.clamp(0, 1)
+                # image_output = to_pil_image(denorm_input_tensor_tmp[0])
+                # image_output.save('helpme.png')
+                # image1_output = to_pil_image(input_tensor[0])
+                # image1_output.save('helpme1.png')
                 covid_output = self.segmentation_model(denorm_input_tensor)
                 covid_output = torch.sigmoid(covid_output)
                 covid_output = covid_output.squeeze().cpu().numpy()
-
-                plt.imsave("covid_segmentation_output.png", covid_output, cmap='viridis')
-                print(covid_output.max(), covid_output.min())
                 
                 covid_binary_mask = (covid_output > 0.5).astype(np.uint8) * 255
                 covid_mask_resized = cv2.resize(covid_binary_mask, (image.shape[1], image.shape[0]))
