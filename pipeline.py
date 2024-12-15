@@ -3,14 +3,17 @@ import torch.nn.functional as F
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
+from models.classification_models.VGG import *
 from models.classification_models.ResNet import *
 from models.segmentation_models.ResnetUnet import *
 from models.segmentation_models.AttentionUNet import *
 from models.segmentation_models.R2U_Net import *
 from models.segmentation_models.R2AttU_Net import *
-
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=UserWarning)
 class Pipeline:
     def __init__(self, img_size=256):
         self.transform = self._get_transforms(img_size)
@@ -30,19 +33,53 @@ class Pipeline:
     
     def _load_models(self, classification_model_name, segmentation_model_name):
         if classification_model_name == 'ResNet50':
-            # self.classification_model = ResNet50()
-            self.classification_model = models.resnet50()
-            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            self.classification_model = ResNet50()
+            # self.classification_model = models.resnet50()
+            # self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
             self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet50.pt', map_location = torch.device('cpu')), strict= False)
         elif classification_model_name == 'ResNet18':
-            # self.classification_model = ResNet18()
-            self.classification_model = models.resnet18()
-            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            self.classification_model = ResNet18()
+            # self.classification_model = models.resnet18()
+            # self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
             self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet18.pt', map_location = torch.device('cpu')), strict= False)
         elif classification_model_name == 'VGG16':
-            pass
+            self.classification_model = models.vgg16(pretrained=False)
+            base_features = nn.Sequential(*list(self.classification_model.features))
+
+            # Adding layers
+            self.classification_model = nn.Sequential(
+                base_features,
+                nn.AdaptiveAvgPool2d((1, 1)),
+                nn.Flatten(),
+                nn.Linear(512, 256),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(256, 3),
+                nn.Softmax(dim=1)
+            )
+            self.classification_model.load_state_dict(torch.load('weights/classification_models/VGG16.pth', map_location = torch.device('cpu')))
         elif classification_model_name == 'VGG19':
-            pass
+            self.classification_model = models.vgg19(pretrained=False)
+            base_features = nn.Sequential(*list(self.classification_model.features))
+
+            # Adding layers
+            self.classification_model = nn.Sequential(
+                base_features,
+                nn.AdaptiveAvgPool2d((1, 1)),
+                nn.Flatten(),
+                nn.Linear(512, 256),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.ReLU(),
+                nn.Dropout(0.5),
+                nn.Linear(256, 3),
+                nn.Softmax(dim=1)
+            )
+            self.classification_model.load_state_dict(torch.load('weights/classification_models/VGG19.pth', map_location = torch.device('cpu')))
         self.classification_model.eval()
 
         if segmentation_model_name == 'ResNetUnet':
@@ -75,9 +112,12 @@ class Pipeline:
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
         transformed = self.transform(image=image)
         input_tensor = transformed['image'].unsqueeze(0)
-        
         with torch.inference_mode():
             outputs = self.classification_model(input_tensor)
+            # print(outputs)
+            # new_input = torch.randn((1, 3, 256, 256))
+            # new_output = self.classification_model(new_input)
+            # print(new_output)
             probs = F.softmax(outputs, dim=1)
             print(probs)
             pred_class = torch.argmax(probs, dim=1).item()
