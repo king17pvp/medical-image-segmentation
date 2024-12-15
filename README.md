@@ -29,7 +29,7 @@ If a patient is diagnosed with COVID, the pipeline will segment the COVID-diagno
 * Thirdly, install required libraries via requirement.txt
 ```pip install -r requirements.txt```
 
-* Next, go to https://drive.google.com/drive/folders/1hcFRbwaR2sFW6akC5lkkSu3H3rJpvvcj?usp=sharing and download the models and put them in the following directories, otherwise the inference program will not work. The place where models are located should follow the directory tree below:
+* Next, go to https://drive.google.com/drive/folders/1hcFRbwaR2sFW6akC5lkkSu3H3rJpvvcj?usp=sharing and download **ALL** the models and put them in the following directories, otherwise, the inference program will not work. The place where models are located should follow the directory tree below:
 ```md
 medical-image-segmentation/weights
 ├── segmentation_models
