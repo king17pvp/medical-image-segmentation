@@ -2,7 +2,7 @@
 A mini project of group 13 studying Intro to Deep Learning course at Hanoi University of Science &amp; Technology
 
 <p align="center">
-  <img src="assets/UIOverview.png" alt = "UI" title = "Overview of the application" width="1020" height="640">
+  <img src="assets/UIOverview.png" alt = "UI" title = "Overview of the application" width="972" height="540">
 </p>
 
 ## Features
