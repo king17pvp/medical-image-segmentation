@@ -2,7 +2,7 @@
 A mini project of group 13 studying Intro to Deep Learning course at Hanoi University of Science &amp; Technology
 
 <p align="center">
-  <img src="scaled_dot_product_and_multi_head_attention.png" alt = "UI" title = "Scaled dot product (source: https://arxiv.org/pdf/1706.03762.pdf)" width="500" height="270">
+  <img src="assets/UIOverview.png" alt = "UI" title = "Overview of the application" width="500" height="270">
 </p>
 
 ## Features
