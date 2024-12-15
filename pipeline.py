@@ -33,16 +33,17 @@ class Pipeline:
     
     def _load_models(self, classification_model_name, segmentation_model_name):
         if classification_model_name == 'ResNet50':
-            self.classification_model = ResNet50()
-            # self.classification_model = models.resnet50()
-            # self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            # self.classification_model = ResNet50()
+            self.classification_model = models.resnet50()
+            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
             self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet50.pt', map_location = torch.device('cpu')), strict= False)
         elif classification_model_name == 'ResNet18':
-            self.classification_model = ResNet18()
-            # self.classification_model = models.resnet18()
-            # self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
+            # self.classification_model = ResNet18()
+            self.classification_model = models.resnet18()
+            self.classification_model.fc = nn.Linear(self.classification_model.fc.in_features, 3)
             self.classification_model.load_state_dict(torch.load('weights/classification_models/ResNet18.pt', map_location = torch.device('cpu')), strict= False)
         elif classification_model_name == 'VGG16':
+            # self.classification_model = VGG16(3)
             self.classification_model = models.vgg16(pretrained=False)
             base_features = nn.Sequential(*list(self.classification_model.features))
 
@@ -62,6 +63,7 @@ class Pipeline:
             )
             self.classification_model.load_state_dict(torch.load('weights/classification_models/VGG16.pth', map_location = torch.device('cpu')))
         elif classification_model_name == 'VGG19':
+            # self.classification_model = VGG19(3)
             self.classification_model = models.vgg19(pretrained=False)
             base_features = nn.Sequential(*list(self.classification_model.features))
 
