@@ -59,7 +59,6 @@ class Pipeline:
                 nn.ReLU(),
                 nn.Dropout(0.5),
                 nn.Linear(256, 3),
-                nn.Softmax(dim=1)
             )
             self.classification_model.load_state_dict(torch.load('weights/classification_models/VGG16.pth', map_location = torch.device('cpu')))
         elif classification_model_name == 'VGG19':
@@ -79,7 +78,6 @@ class Pipeline:
                 nn.ReLU(),
                 nn.Dropout(0.5),
                 nn.Linear(256, 3),
-                nn.Softmax(dim=1)
             )
             self.classification_model.load_state_dict(torch.load('weights/classification_models/VGG19.pth', map_location = torch.device('cpu')))
         self.classification_model.eval()
